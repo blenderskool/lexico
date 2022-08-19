@@ -1,0 +1,19 @@
+{
+  "name": "seekr",
+  "version": "0.1.0",
+  "description": "🔭 Powerful data searching with a terse syntax",
+  "author": "Akash Hamirwasia",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "optimize": "terser dist/table.js --config-file terser.config.json -o dist/table.js",
+    "search": "node dist/index.js"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^18.7.5",
+    "terser": "^5.14.2",
+    "typescript": "^4.7.4"
+  }
+}
