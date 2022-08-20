@@ -30,10 +30,8 @@ export default class Seekr {
     while (splitStr.length) {
       const lexicon = this.getNextToken(splitStr);
 
-      // console.log(lexicon, lexicon.length);
-
       if (lexicon.trim().length === 0) continue;
-      let token: Token;
+      let tokenVal: string | number;
       let tokenType: TokenType;
 
       switch (lexicon) {
@@ -76,18 +74,17 @@ export default class Seekr {
         case TokenType.GT:
         case TokenType.LT:
         case TokenType.GTE:
-        case TokenType.LTE:
-          // TODO: Handle case when expected number lexicon is not a valid number
-          token = {
-            token: parseInt(lexicon),
-            type: TokenType.Number,
-          };
+        case TokenType.LTE: {
+          const number = parseInt(lexicon);
+          tokenVal = isNaN(number) ? lexicon : number;
           break;
+        }
         default:
-          token = { token: lexicon, type: tokenType };
+          tokenVal = lexicon;
           break;
       }
 
+      const token = { token: tokenVal, type: tokenType };
       yield token;
       prevToken = token;
     }

@@ -14,26 +14,14 @@ export const enum TokenType {
   GTE = '10',
   LT = '11',
   LTE = '12',
-  Number = '13',
 }
 
-export type NumCmpOp =
-  | TokenType.GT
-  | TokenType.GTE
-  | TokenType.LT
-  | TokenType.LTE;
+export type CmpOp = TokenType.GT | TokenType.GTE | TokenType.LT | TokenType.LTE;
 
-interface TokenNumber extends BaseToken {
-  type: TokenType.Number;
-  token: number;
+export interface Token extends BaseToken {
+  type: TokenType;
+  token: string | number;
 }
-
-interface TokenString extends BaseToken {
-  type: Exclude<TokenType, TokenType.Number>;
-  token: string;
-}
-
-export type Token = TokenNumber | TokenString;
 
 export type Data = { [key: string]: Data } | string | number | boolean;
 

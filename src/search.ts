@@ -1,10 +1,10 @@
-import { Data, NumCmpOp, ParseTree, Token, TokenType } from './types';
+import { Data, CmpOp, ParseTree, Token, TokenType } from './types';
 import { getPath } from './utils';
 
 type SearchFlags = {
   path?: string;
   exclude?: boolean;
-  numCmpOp?: NumCmpOp;
+  cmpOp?: CmpOp;
 };
 
 function And(lhs: ParseTree, rhs: ParseTree, data: Data[], flags: SearchFlags) {
@@ -29,9 +29,9 @@ function excludeParenthesis(parseTree: ParseTree) {
   return parseTree.body[parseTree.body[0].type === TokenType.LParen ? 1 : 0];
 }
 
-const NumCmpOperations: Record<
-  NumCmpOp,
-  (lhs: number, rhs: number) => boolean
+const CmpOperations: Record<
+  CmpOp,
+  (lhs: number | string, rhs: number | string) => boolean
 > = {
   [TokenType.GT]: (lhs, rhs) => lhs > rhs,
   [TokenType.GTE]: (lhs, rhs) => lhs >= rhs,
@@ -39,13 +39,13 @@ const NumCmpOperations: Record<
   [TokenType.LTE]: (lhs, rhs) => lhs <= rhs,
 };
 
-function isAtomSimilar(
-  data: Data,
-  search: string | number,
-  numCmpOp: NumCmpOp
-) {
-  if (typeof search === 'number' && typeof data === 'number') {
-    return NumCmpOperations[numCmpOp](data, search);
+function isAtomSimilar(data: Data, search: string | number, cmpOp?: TokenType) {
+  /**
+   * Checking the presence of cmpOp is important as it may be undefined,
+   * in which case the fallback is equality check.
+   */
+  if (cmpOp && (typeof data === 'string' || typeof data === 'number')) {
+    return CmpOperations[cmpOp](data, search);
   } else {
     return data
       .toString()
@@ -57,7 +57,7 @@ function isAtomSimilar(
 function isItemMatching(
   item: Data,
   search: string | number,
-  { path, numCmpOp }: Pick<SearchFlags, 'path' | 'numCmpOp'>
+  { path, cmpOp }: Pick<SearchFlags, 'path' | 'cmpOp'>
 ) {
   if (typeof item === 'object') {
     if (path !== undefined) {
@@ -65,16 +65,16 @@ function isItemMatching(
 
       // if value for the selected field is undefined, don't include in search result
       return selectedField !== undefined
-        ? isAtomSimilar(selectedField, search, numCmpOp)
+        ? isAtomSimilar(selectedField, search, cmpOp)
         : false;
     } else {
       // Todo: Deep search? Support Arrays?
       return Object.values(item).some((value) =>
-        isAtomSimilar(value, search, numCmpOp)
+        isAtomSimilar(value, search, cmpOp)
       );
     }
   } else {
-    return isAtomSimilar(item, search, numCmpOp);
+    return isAtomSimilar(item, search, cmpOp);
   }
 }
 
@@ -87,7 +87,6 @@ function searchWithFlags(
   if (!('body' in parseTree)) {
     switch (parseTree.type) {
       case TokenType.SearchTerm:
-      case TokenType.Number:
         return data.filter((item: Data) => {
           let search = parseTree.token;
           const matched = isItemMatching(item, search, flags);
@@ -141,7 +140,7 @@ function searchWithFlags(
           break;
         case 'CmpOp':
           // These typecasts are safe because the grammar and parser guarantees it
-          nextFlags.numCmpOp = (firstSymbol.body[0] as Token).type as NumCmpOp;
+          nextFlags.cmpOp = (firstSymbol.body[0] as Token).type as CmpOp;
           break;
         default:
           parseTree.body.unshift(firstSymbol);

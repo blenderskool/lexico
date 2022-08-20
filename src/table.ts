@@ -103,7 +103,7 @@ export default expandEach<Actions | number>([
       },
   },
   {
-    [TokenType.Number]: { shift: 23 },
+    [TokenType.SearchTerm]: { shift: 23 },
   },
   {
     [TokenType.SearchTerm]: { shift: 8 },
@@ -123,22 +123,22 @@ export default expandEach<Actions | number>([
     CmpOp: 11,
   },
   {
-    [TokenType.Number]: {
+    [TokenType.SearchTerm]: {
       reduce: ['CmpOp', TokenType.GT],
     },
   },
   {
-    [TokenType.Number]: {
+    [TokenType.SearchTerm]: {
       reduce: ['CmpOp', TokenType.LT],
     },
   },
   {
-    [TokenType.Number]: {
+    [TokenType.SearchTerm]: {
       reduce: ['CmpOp', TokenType.GTE],
     },
   },
   {
-    [TokenType.Number]: {
+    [TokenType.SearchTerm]: {
       reduce: ['CmpOp', TokenType.LTE],
     },
   },
@@ -208,7 +208,7 @@ export default expandEach<Actions | number>([
   {
     [`${TokenType.And}, ${TokenType.Or}, ${TokenType.SearchTerm}, ${TokenType.Exclude}, ${TokenType.LParen}, ${TokenType.RParen}, ${TokenType.GT}, ${TokenType.LT}, ${TokenType.GTE}, ${TokenType.LTE}, $`]:
       {
-        reduce: ['Term', `CmpOp ${TokenType.Number}`],
+        reduce: ['Term', `CmpOp ${TokenType.SearchTerm}`],
       },
   },
   {
