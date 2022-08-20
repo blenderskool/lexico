@@ -25,3 +25,16 @@ export const expandEach = <T>(
 ) => {
   return objects.map((obj) => expand(obj, separator));
 };
+
+/**
+ * Gets a value in the object selected by a dot path
+ * @param obj Object
+ * @param path Dot path string
+ * @returns Selected field
+ */
+export const getPath = <T extends Object>(object: T, path: string) => {
+  return path
+    .split('.')
+    .filter((key) => key.length)
+    .reduce((parent, key) => parent?.[key], object);
+};

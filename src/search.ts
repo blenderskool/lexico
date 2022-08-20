@@ -1,4 +1,5 @@
 import { Data, NumCmpOp, ParseTree, Token, TokenType } from './types';
+import { getPath } from './utils';
 
 type SearchFlags = {
   path?: string;
@@ -59,8 +60,13 @@ function isItemMatching(
   { path, numCmpOp }: Pick<SearchFlags, 'path' | 'numCmpOp'>
 ) {
   if (typeof item === 'object') {
-    if (path !== undefined && item[path] !== undefined) {
-      return isAtomSimilar(item[path], search, numCmpOp);
+    if (path !== undefined) {
+      const selectedField = getPath(item, path);
+
+      // if value for the selected field is undefined, don't include in search result
+      return selectedField !== undefined
+        ? isAtomSimilar(selectedField, search, numCmpOp)
+        : false;
     } else {
       // Todo: Deep search? Support Arrays?
       return Object.values(item).some((value) =>
