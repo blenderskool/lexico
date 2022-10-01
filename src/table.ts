@@ -9,6 +9,7 @@ export default expandEach<Actions | number>([
     [TokenType.SearchTerm]: { shift: 8 },
     [TokenType.Exclude]: { shift: 9 },
     [TokenType.LParen]: { shift: 12 },
+    [TokenType.RParen]: { reduce: ['S', 'EPSILON'] },
     [TokenType.GT]: { shift: 13 },
     [TokenType.LT]: { shift: 14 },
     [TokenType.GTE]: { shift: 15 },
@@ -35,6 +36,7 @@ export default expandEach<Actions | number>([
     [TokenType.SearchTerm]: { shift: 8 },
     [TokenType.Exclude]: { shift: 9 },
     [TokenType.LParen]: { shift: 12 },
+    [TokenType.RParen]: { reduce: ['S', 'EPSILON'] },
     [TokenType.GT]: { shift: 13 },
     [TokenType.LT]: { shift: 14 },
     [TokenType.GTE]: { shift: 15 },
@@ -109,11 +111,16 @@ export default expandEach<Actions | number>([
     [TokenType.SearchTerm]: { shift: 8 },
     [TokenType.Exclude]: { shift: 9 },
     [TokenType.LParen]: { shift: 12 },
+    [TokenType.RParen]: { reduce: ['S', 'EPSILON'] },
     [TokenType.GT]: { shift: 13 },
     [TokenType.LT]: { shift: 14 },
     [TokenType.GTE]: { shift: 15 },
     [TokenType.LTE]: { shift: 16 },
-    Search: 24,
+    $: {
+      reduce: ['S', 'EPSILON'],
+    },
+    S: 24,
+    Search: 2,
     And: 3,
     Or: 4,
     SearchType: 5,
@@ -143,7 +150,7 @@ export default expandEach<Actions | number>([
     },
   },
   {
-    $: {
+    [`${TokenType.RParen}, $`]: {
       reduce: ['S', 'Search S'],
     },
   },
@@ -229,19 +236,13 @@ export default expandEach<Actions | number>([
   {
     [`${TokenType.And}, ${TokenType.Or}, ${TokenType.SearchTerm}, ${TokenType.Exclude}, ${TokenType.LParen}, ${TokenType.RParen}, ${TokenType.GT}, ${TokenType.LT}, ${TokenType.GTE}, ${TokenType.LTE}, $`]:
       {
-        reduce: [
-          'Group',
-          `${TokenType.SearchTerm} ${TokenType.GroupTerminator} Term`,
-        ],
+        reduce: ['Group', `${TokenType.SearchTerm} ${TokenType.GroupTerminator} Term`],
       },
   },
   {
     [`${TokenType.And}, ${TokenType.Or}, ${TokenType.SearchTerm}, ${TokenType.Exclude}, ${TokenType.LParen}, ${TokenType.RParen}, ${TokenType.GT}, ${TokenType.LT}, ${TokenType.GTE}, ${TokenType.LTE}, $`]:
       {
-        reduce: [
-          'SearchTerm',
-          `${TokenType.LParen} Search ${TokenType.RParen}`,
-        ],
+        reduce: ['SearchTerm', `${TokenType.LParen} S ${TokenType.RParen}`],
       },
   },
 ]);

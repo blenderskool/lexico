@@ -1,24 +1,14 @@
-import { Data, CmpOp, ParseTree, Token, TokenType } from './types';
-import { getPath } from './utils';
-
-type SearchFlags = {
-  path?: string;
-  exclude?: boolean;
-  cmpOp?: CmpOp;
-};
-
-function And(lhs: ParseTree, rhs: ParseTree, data: Data[], flags: SearchFlags) {
-  const lhsData = searchWithFlags(lhs, data, flags);
-  return searchWithFlags(rhs, lhsData, flags);
-}
-
-function Or(lhs: ParseTree, rhs: ParseTree, data: Data[], flags: SearchFlags) {
-  const lhsData = searchWithFlags(lhs, data, flags);
-  const rhsData = searchWithFlags(rhs, data, flags);
-
-  // Set is used to remove duplicate items that matched in both lhs and rhs
-  return [...new Set([...lhsData, ...rhsData])];
-}
+import { BinaryCmp } from './comparators';
+import {
+  CmpOp,
+  Comparator,
+  Data,
+  DataWithScore,
+  ParseTree,
+  SearchFlags,
+  Token,
+  TokenType,
+} from './types';
 
 /**
  * Helper function to exclude the left parenthesis token when it exists and return its body
@@ -29,70 +19,17 @@ function excludeParenthesis(parseTree: ParseTree) {
   return parseTree.body[parseTree.body[0].type === TokenType.LParen ? 1 : 0];
 }
 
-const CmpOperations: Record<
-  CmpOp,
-  (lhs: number | string, rhs: number | string) => boolean
-> = {
-  [TokenType.GT]: (lhs, rhs) => lhs > rhs,
-  [TokenType.GTE]: (lhs, rhs) => lhs >= rhs,
-  [TokenType.LT]: (lhs, rhs) => lhs < rhs,
-  [TokenType.LTE]: (lhs, rhs) => lhs <= rhs,
-};
-
-function isAtomSimilar(data: Data, search: string | number, cmpOp?: TokenType) {
-  /**
-   * Checking the presence of cmpOp is important as it may be undefined,
-   * in which case the fallback is equality check.
-   */
-  if (cmpOp && (typeof data === 'string' || typeof data === 'number')) {
-    return CmpOperations[cmpOp](data, search);
-  } else {
-    return data
-      .toString()
-      .toLowerCase()
-      .includes(search.toString().toLowerCase());
-  }
-}
-
-function isItemMatching(
-  item: Data,
-  search: string | number,
-  { path, cmpOp }: Pick<SearchFlags, 'path' | 'cmpOp'>
-) {
-  if (typeof item === 'object') {
-    if (path !== undefined) {
-      const selectedField = getPath(item, path);
-
-      // if value for the selected field is undefined, don't include in search result
-      return selectedField !== undefined
-        ? isAtomSimilar(selectedField, search, cmpOp)
-        : false;
-    } else {
-      // Todo: Deep search? Support Arrays?
-      return Object.values(item).some((value) =>
-        isAtomSimilar(value, search, cmpOp)
-      );
-    }
-  } else {
-    return isAtomSimilar(item, search, cmpOp);
-  }
-}
-
-function searchWithFlags(
+export function searchWithFlags(
   parseTree: ParseTree | Token,
-  data: Data[],
+  data: DataWithScore[],
+  comparator: Comparator,
   flags: SearchFlags = {}
-): Data[] {
+): DataWithScore[] {
   // Base case when a token has been reached
   if (!('body' in parseTree)) {
     switch (parseTree.type) {
       case TokenType.SearchTerm:
-        return data.filter((item: Data) => {
-          let search = parseTree.token;
-          const matched = isItemMatching(item, search, flags);
-
-          return flags.exclude ? !matched : matched;
-        });
+        return comparator.search(data, parseTree.token, flags);
       default:
         // Other searchable tokens not supported
         return [];
@@ -103,7 +40,11 @@ function searchWithFlags(
   switch (parseTree.type) {
     case 'Group': {
       const path = (parseTree.body[0] as Token).token as string;
-      return searchWithFlags(parseTree.body[2], data, { ...flags, path });
+      return searchWithFlags(parseTree.body[2], data, comparator, {
+        ...flags,
+        // If there is already some path in the context, then append to it
+        path: flags.path ? `${flags.path}.${path}` : path,
+      });
     }
     case 'And': {
       const lhs = parseTree.body[0] as ParseTree;
@@ -111,8 +52,8 @@ function searchWithFlags(
 
       // De-Morgan's law
       return flags.exclude
-        ? Or(lhs, rhs, data, flags)
-        : And(lhs, rhs, data, flags);
+        ? comparator.or(lhs, rhs, data, flags)
+        : comparator.and(lhs, rhs, data, flags);
     }
     case 'Or': {
       const lhs = parseTree.body[0] as ParseTree;
@@ -120,15 +61,8 @@ function searchWithFlags(
 
       // De-Morgan's law
       return flags.exclude
-        ? And(lhs, rhs, data, flags)
-        : Or(lhs, rhs, data, flags);
-    }
-    case 'S': {
-      // Performs logical "AND" operation on all branches of the root
-      return parseTree.body.reduce(
-        (prevData, body) => searchWithFlags(body, prevData, flags),
-        data
-      );
+        ? comparator.and(lhs, rhs, data, flags)
+        : comparator.or(lhs, rhs, data, flags);
     }
     case 'Term': {
       const firstSymbol = parseTree.body.shift();
@@ -146,16 +80,46 @@ function searchWithFlags(
           parseTree.body.unshift(firstSymbol);
       }
 
-      return searchWithFlags(excludeParenthesis(parseTree), data, {
+      return searchWithFlags(excludeParenthesis(parseTree), data, comparator, {
         ...flags,
         ...nextFlags,
       });
     }
+    case 'S': {
+      /**
+       * Performs "AND" operation on all branches of the root if there is more than 1 child,
+       * otherwise fallback to searching the only child
+       */
+      if (parseTree.body.length > 1) {
+        let prevTree = parseTree.body[0] as ParseTree;
+        let result = data;
+        parseTree.body.slice(1).forEach((next: ParseTree) => {
+          result = comparator.and(prevTree, next, result, flags);
+          prevTree = next;
+        });
+
+        return result;
+      }
+
+      /**
+       * There's no break here as we want to fallback to searching the
+       * only child of "S" root if there are no multiple children (and hence no AND operation)
+       */
+    }
     default:
-      return searchWithFlags(excludeParenthesis(parseTree), data, flags);
+      return searchWithFlags(excludeParenthesis(parseTree), data, comparator, flags);
   }
 }
 
-export default function search(compiled: ParseTree | Token, data: Data[]) {
-  return searchWithFlags(compiled, data);
+export default function search(
+  compiled: ParseTree | Token,
+  data: Data[],
+  comparator: Comparator = new BinaryCmp()
+) {
+  const scoredData = data.map((record) => ({
+    record,
+    score: 0,
+  }));
+
+  return searchWithFlags(compiled, scoredData, comparator).sort((a, b) => b.score - a.score);
 }

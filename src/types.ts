@@ -25,4 +25,35 @@ export interface Token extends BaseToken {
 
 export type Data = { [key: string]: Data } | string | number | boolean;
 
+export interface DataWithScore {
+  record: Data;
+  score: number;
+}
+
 export type ParseTree = BaseParseTree<Token>;
+
+export interface SearchFlags {
+  path?: string;
+  exclude?: boolean;
+  cmpOp?: CmpOp;
+}
+
+export interface Comparator {
+  /**
+   * Performs `lhs` AND `rhs` operation on `data`
+   * @returns Resulting data after the operation
+   */
+  and(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags): DataWithScore[];
+
+  /**
+   * Performs `lhs` OR `rhs` operation on `data`
+   * @returns Resulting data after the operation
+   */
+  or(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags): DataWithScore[];
+
+  /**
+   * Searches `data` with query as `search` and `flags` applied
+   * @returns Resulting data after the operation
+   */
+  search(data: DataWithScore[], search: string | number, flags: SearchFlags): DataWithScore[];
+}
