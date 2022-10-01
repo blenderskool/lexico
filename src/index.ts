@@ -1,7 +1,7 @@
 import { LRParser } from './parser';
 import search from './search';
 import table from './table';
-import { Data, ParseTree, Token, TokenType } from './types';
+import { Comparator, Data, ParseTree, Token, TokenType } from './types';
 
 export default class Seekr {
   tree: ParseTree | Token;
@@ -96,11 +96,11 @@ export default class Seekr {
       throw err;
     }
 
-    return (data: Data[]) => search(tree, data);
+    return (data: Data[], comparator?: Comparator) => search(tree, data, comparator);
   }
 
-  search(input: string, data: Data[]) {
-    return this.compile(input)(data);
+  search(input: string, data: Data[], comparator?: Comparator) {
+    return this.compile(input)(data, comparator);
   }
 }
 
