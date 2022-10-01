@@ -15,5 +15,8 @@
     "@types/node": "^18.7.5",
     "terser": "^5.14.2",
     "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "fast-fuzzy": "^1.11.2"
   }
 }
