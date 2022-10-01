@@ -1,11 +1,16 @@
+import { BinaryCmp } from './comparators';
 import { LRParser } from './parser';
 import search from './search';
 import table from './table';
-import { Comparator, Data, ParseTree, Token, TokenType } from './types';
+import { Comparator, Data, Token, TokenType } from './types';
 
 export default class Seekr {
-  tree: ParseTree | Token;
+  private comparator: Comparator;
   static parser = new LRParser<Token>(table);
+
+  constructor(comparator: Comparator = new BinaryCmp()) {
+    this.comparator = comparator;
+  }
 
   private getNextToken(splitStr: string[]) {
     let lexicon = splitStr.shift();
@@ -96,14 +101,12 @@ export default class Seekr {
       throw err;
     }
 
-    return (data: Data[], comparator?: Comparator) => search(tree, data, comparator);
+    return (data: Data[]) => search(tree, data, this.comparator);
   }
 
-  search(input: string, data: Data[], comparator?: Comparator) {
-    return this.compile(input)(data, comparator);
+  search(input: string, data: Data[]) {
+    return this.compile(input)(data);
   }
 }
 
-const input = process.argv[2];
-const ls = new Seekr();
-const results = ls.search(input, []);
+export { BinaryCmp, FuzzyCmp } from './comparators';
