@@ -27,11 +27,11 @@ export const expandEach = <T>(objects: Record<string, T>[], separator = ', ') =>
  * @param path Dot path string
  * @returns Selected field
  */
-export const getPath = <T extends Object>(object: T, path: string) =>
+export const getPath = <R, T extends Object>(object: T, path: string) =>
   path
     .split('.')
     .filter((key) => key.length)
-    .reduce((parent, key) => parent?.[key], object);
+    .reduce((parent, key) => parent?.[key], object) as R;
 
 /**
  * Shallow clones each element in the `data` array
