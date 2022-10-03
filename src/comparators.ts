@@ -33,7 +33,7 @@ export class BinaryCmp implements Comparator {
   ): boolean {
     if (typeof record === 'object') {
       if (path !== undefined) {
-        const selectedField = getPath(record, path);
+        const selectedField = getPath<Data, Data>(record, path);
 
         /**
          * Currently it is assumed that the selected result here is atomic
@@ -94,7 +94,7 @@ export class FuzzyCmp implements Comparator {
   getScore(record: Data, search: string | number, { path }: Pick<SearchFlags, 'path'>) {
     if (typeof record === 'object') {
       if (path !== undefined) {
-        const selectedField = getPath(record, path);
+        const selectedField = getPath<Data, Data>(record, path);
 
         /**
          * Currently it is assumed that the selected result here is atomic
