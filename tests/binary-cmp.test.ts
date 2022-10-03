@@ -1,9 +1,7 @@
 import Seekr, { BinaryCmp } from '../src';
-import { Data, DataWithScore } from '../src/types';
-import { getPath } from '../src/utils';
+import { Data } from '../src/types';
+import { pick, exclude } from './utils';
 import launches from './data.json';
-
-const pick = (data: DataWithScore[], path: string) => data.map((item) => getPath(item, path));
 
 const data = launches as Data[];
 
@@ -58,7 +56,34 @@ describe('Binary comparator', () => {
      * `rocket` is an object(and not atomic). Seekr does not perform full text search on all fields
      * within the `rocket` object. This query gives an empty result
      */
-    result = ls.search('rocket:abc', data);
+    result = ls.search('rocket:heavy', data);
     expect(pick(result, 'record.id')).toEqual([]);
+  });
+
+  it('does not throw an error when group selector is invalid', () => {
+    /**
+     * Group selectors that do not exist in the record get ignored
+     * without throwing an error and are always treated as a 'falsy' match.
+     */
+    expect(() => {
+      let result = ls.search('wrong_path:heavy', data);
+      expect(result).toEqual([]);
+    }).not.toThrow();
+  });
+
+  it('exludes results when using exclude operator', () => {
+    const allIds = pick(data, 'id');
+    const includedIds = pick(ls.search('falcon heavy', data), 'record.id');
+    const excludedIds = exclude(allIds, includedIds).sort();
+
+    /**
+     * Exclude operator excludes the picked records from the result.
+     * It also applies De-Morgan's law along the way when using it at once on complex queries.
+     *
+     * Here, the query `!(falcon heavy)` is treated as `!(falcon AND heavy)` which becomes `!falcon OR !heavy`.
+     * The resulting records are those that do not have 'falcon' or 'heavy'
+     */
+    let result = ls.search('!(falcon heavy)', data);
+    expect(pick(result, 'record.id').sort()).toEqual(excludedIds);
   });
 });
