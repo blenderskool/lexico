@@ -15,9 +15,20 @@ import {
  * @param parseTree ParseTree
  * @returns ParseTree
  */
-function excludeParenthesis(parseTree: ParseTree) {
-  return parseTree.body[parseTree.body[0].type === TokenType.LParen ? 1 : 0];
-}
+const excludeParenthesis = (parseTree: ParseTree) =>
+  parseTree.body[parseTree.body[0].type === TokenType.LParen ? 1 : 0];
+
+/**
+ * Helper function that applies AND operation while also
+ * inverting to OR operation when `exclude` flag is enabled
+ */
+const And = (
+  lhs: ParseTree,
+  rhs: ParseTree,
+  data: DataWithScore[],
+  flags: SearchFlags,
+  comparator: Comparator
+) => (flags.exclude ? comparator.or(lhs, rhs, data, flags) : comparator.and(lhs, rhs, data, flags));
 
 export function searchWithFlags(
   parseTree: ParseTree | Token,
@@ -50,10 +61,7 @@ export function searchWithFlags(
       const lhs = parseTree.body[0] as ParseTree;
       const rhs = parseTree.body[2] as ParseTree;
 
-      // De-Morgan's law
-      return flags.exclude
-        ? comparator.or(lhs, rhs, data, flags)
-        : comparator.and(lhs, rhs, data, flags);
+      return And(lhs, rhs, data, flags, comparator);
     }
     case 'Or': {
       const lhs = parseTree.body[0] as ParseTree;
@@ -94,7 +102,7 @@ export function searchWithFlags(
         let prevTree = parseTree.body[0] as ParseTree;
         let result = data;
         parseTree.body.slice(1).forEach((next: ParseTree) => {
-          result = comparator.and(prevTree, next, result, flags);
+          result = And(prevTree, next, result, flags, comparator);
           prevTree = next;
         });
 
