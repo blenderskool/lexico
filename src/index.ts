@@ -1,18 +1,17 @@
 import { BinaryCmp } from './comparators';
 import { LRParser } from './parser';
-import search from './search';
+import searchWithFlags from './search';
 import table from './table';
-import { Comparator, Data, Token, TokenType } from './types';
+import { Comparator, Data, DataWithScore, Token, TokenType, ComparatorWithIndexing } from './types';
+import { getPath } from './utils';
 
-export default class Seekr {
-  private comparator: Comparator;
-  static parser = new LRParser<Token>(table);
+type SeekrOptions = {
+  data?: Data[];
+  indexes?: string[];
+};
 
-  constructor(comparator: Comparator = new BinaryCmp()) {
-    this.comparator = comparator;
-  }
-
-  private getNextToken(splitStr: string[]) {
+class Lexer {
+  static getNextToken(splitStr: string[]) {
     let lexicon = splitStr.shift();
 
     // Merge quoted string to one lexicon
@@ -28,12 +27,12 @@ export default class Seekr {
     return lexicon;
   }
 
-  private *lexer(input: string) {
+  static *lexer(input: string) {
     const splitStr = input.split(/(:|"|<=|>=|<|>|!|\s+|\(|\))/g);
     let prevToken: Token = null;
 
     while (splitStr.length) {
-      const lexicon = this.getNextToken(splitStr);
+      const lexicon = Lexer.getNextToken(splitStr);
 
       if (lexicon.trim().length === 0) continue;
       let tokenVal: string | number;
@@ -94,19 +93,104 @@ export default class Seekr {
       prevToken = token;
     }
   }
+}
+
+export default class Seekr {
+  private comparator: Comparator | ComparatorWithIndexing;
+  static parser = new LRParser<Token>(table);
+  private scoredData: DataWithScore[];
+  private indexes: Set<string> = new Set();
+
+  constructor(
+    comparator: Comparator | ComparatorWithIndexing = new BinaryCmp(),
+    opts?: SeekrOptions
+  ) {
+    this.comparator = comparator;
+
+    if (opts?.indexes) {
+      this.indexes = new Set(opts.indexes);
+    }
+
+    /**
+     * If data is provided during initialization, and comparator supports search index,
+     * initiate index construction for faster searches
+     */
+    if (opts?.data) {
+      this.scoredData = this.createScoredDataAndIndex(opts.data);
+    }
+  }
+
+  private createScoredDataAndIndex(data: Data[]): DataWithScore[] {
+    const scoredData = data.map((record) => ({ record, score: 0 }));
+
+    if (this.indexes) {
+      scoredData.forEach((item) => this.addItemToIndex(item));
+    }
+
+    return scoredData;
+  }
+
+  private addItemToIndex(data: DataWithScore) {
+    const comparator = this.comparator;
+    if ('addToIndex' in comparator) {
+      /**
+       * @param path it is the path of a field on which `data` is being indexed
+       */
+      const addItemToFieldIndex = (path: string) => {
+        const value = getPath<string | undefined, Data>(data.record, path);
+        // If there's no value in associated path, ignore adding this record to the `path`'s index
+        if (!value) return;
+
+        /**
+         * Indexing happens with the value of the `data` at `path`.
+         * This is called `indexKey`, it is different from `path`.
+         *
+         * `path` is on which `data` is indexed.
+         * `indexKey` is the value being indexed (with also a reference to `data` it is a part of and gets returned later).
+         */
+        const indexKey = value.toString();
+        comparator.addToIndex(path, indexKey, data);
+      };
+
+      this.indexes.forEach((path) => addItemToFieldIndex(path));
+    } else {
+      throw new Error('Indexing not supported by this comparator');
+    }
+  }
+
+  addRecord(record: Data) {
+    const scoredItem = { record, score: 0 };
+    this.scoredData.push(scoredItem);
+    if (this.indexes) {
+      this.addItemToIndex(scoredItem);
+    }
+  }
 
   compile(input: string) {
-    const [tree, err] = Seekr.parser.parse(this.lexer(input));
+    const [tree, err] = Seekr.parser.parse(Lexer.lexer(input));
     if (err) {
       throw err;
     }
 
-    return (data: Data[]) => search(tree, data, this.comparator);
+    return (data?: Data[]) => {
+      /**
+       * This guarantees that that the data gets indexed before search is initated
+       * with the indexes specified if the comparator supports it.
+       *
+       * `this.scoredData` is data passed in constructor(where it gets indexed),
+       * `data` is data passed during search and gets indexed here
+       */
+      const scoredData = this.scoredData ?? this.createScoredDataAndIndex(data);
+
+      return searchWithFlags(tree, scoredData, this.comparator, {
+        indexFields: this.indexes,
+      }).sort((a, b) => b.score - a.score);
+    };
   }
 
-  search(input: string, data: Data[]) {
+  search(input: string, data?: Data[]) {
     return this.compile(input)(data);
   }
 }
 
-export { BinaryCmp, FuzzyCmp } from './comparators';
+export * from './comparators';
