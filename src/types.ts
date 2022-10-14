@@ -36,6 +36,7 @@ export interface SearchFlags {
   path?: string;
   exclude?: boolean;
   cmpOp?: CmpOp;
+  indexFields: Set<string>;
 }
 
 export interface Comparator {
@@ -56,4 +57,8 @@ export interface Comparator {
    * @returns Resulting data after the operation
    */
   search(data: DataWithScore[], search: string | number, flags: SearchFlags): DataWithScore[];
+}
+
+export interface ComparatorWithIndexing extends Comparator {
+  addToIndex(path: string, key: string, value: DataWithScore): void;
 }

@@ -1,8 +1,7 @@
-import { BinaryCmp } from './comparators';
 import {
   CmpOp,
   Comparator,
-  Data,
+  ComparatorWithIndexing,
   DataWithScore,
   ParseTree,
   SearchFlags,
@@ -30,11 +29,11 @@ const And = (
   comparator: Comparator
 ) => (flags.exclude ? comparator.or(lhs, rhs, data, flags) : comparator.and(lhs, rhs, data, flags));
 
-export function searchWithFlags(
+export default function searchWithFlags(
   parseTree: ParseTree | Token,
   data: DataWithScore[],
-  comparator: Comparator,
-  flags: SearchFlags = {}
+  comparator: Comparator | ComparatorWithIndexing,
+  flags: SearchFlags
 ): DataWithScore[] {
   // Base case when a token has been reached
   if (!('body' in parseTree)) {
@@ -117,17 +116,4 @@ export function searchWithFlags(
     default:
       return searchWithFlags(excludeParenthesis(parseTree), data, comparator, flags);
   }
-}
-
-export default function search(
-  compiled: ParseTree | Token,
-  data: Data[],
-  comparator: Comparator = new BinaryCmp()
-) {
-  const scoredData = data.map((record) => ({
-    record,
-    score: 0,
-  }));
-
-  return searchWithFlags(compiled, scoredData, comparator).sort((a, b) => b.score - a.score);
 }

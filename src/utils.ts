@@ -1,3 +1,5 @@
+import { SearchFlags } from './types';
+
 /**
  * Expands a terse object with multiple keys sharing same values to a JS compatible object
  * @param object terse object
@@ -39,3 +41,19 @@ export const getPath = <R, T extends Object>(object: T, path: string) =>
  * @returns A shallow clone of each element in `data`s
  */
 export const clone = <T>(data: T[]) => data.map((elm) => ({ ...elm }));
+
+/**
+ * Construct a list of indexes that needs to be searched based on the search flags set.
+ * @param flags Search flags
+ * @returns List of indexes to be searched
+ */
+export const getIndexesToSearch = (flags: SearchFlags): string[] => {
+  /**
+   * If indexedFields is defined and (either path selector is empty or path selector is part of indexedFields),
+   * only then get the indexes to search.
+   */
+  if (flags.indexFields.size && (!flags.path || flags.indexFields.has(flags.path)))
+    return flags.path ? [flags.path] : [...flags.indexFields];
+
+  return [];
+};
