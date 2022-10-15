@@ -60,5 +60,5 @@ export interface Comparator {
 }
 
 export interface ComparatorWithIndexing extends Comparator {
-  addToIndex(path: string, key: string, value: DataWithScore): void;
+  addToIndex(path: string, key: string, data: DataWithScore): void;
 }

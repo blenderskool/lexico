@@ -1,7 +1,16 @@
-import { fuzzy } from 'fast-fuzzy';
-import { searchWithFlags } from './search';
-import { CmpOp, Comparator, Data, DataWithScore, ParseTree, SearchFlags, TokenType } from './types';
-import { clone, getPath } from './utils';
+import { FullOptions, fuzzy, Searcher as FuzzySearcher } from 'fast-fuzzy';
+import searchWithFlags from './search';
+import {
+  CmpOp,
+  Comparator,
+  ComparatorWithIndexing,
+  Data,
+  DataWithScore,
+  ParseTree,
+  SearchFlags,
+  TokenType,
+} from './types';
+import { clone, getIndexesToSearch, getPath } from './utils';
 
 const CmpOperations: Record<CmpOp, (lhs: number | string, rhs: number | string) => boolean> = {
   [TokenType.GT]: (lhs, rhs) => lhs > rhs,
@@ -82,7 +91,22 @@ export class BinaryCmp implements Comparator {
  *
  * Unlike Binary comparator, it does not include/exclude records.
  */
-export class FuzzyCmp implements Comparator {
+export class FuzzyCmp implements ComparatorWithIndexing {
+  index: Record<string, FuzzySearcher<DataWithScore, FullOptions<DataWithScore>>> = {};
+
+  /**
+   * Adds a record to the index
+   */
+  addToIndex(path: string, key: string, data: DataWithScore) {
+    this.index[path] ??= new FuzzySearcher<DataWithScore, FullOptions<DataWithScore>>([], {
+      returnMatchData: true,
+      keySelector: (s) => getPath<string, Data>(s.record, path).toString(),
+      threshold: 0,
+    });
+
+    this.index[path].add(data);
+  }
+
   isAtomSimilar(data: Data, search: string | number) {
     return fuzzy(search.toString(), data.toString().toLowerCase()) * 100;
   }
@@ -151,10 +175,25 @@ export class FuzzyCmp implements Comparator {
     // Comparison operators are not defined for fuzzy search, so fallback to BinaryComparator
     if (flags.cmpOp) return new BinaryCmp().search(data, search, flags);
 
-    data.forEach((item) => {
-      const score = this.getScore(item.record, search, flags);
-      item.score += flags.exclude ? -score : score;
-    });
+    const indexFields = getIndexesToSearch(flags);
+
+    if (indexFields.length) {
+      // If there are fields indexed, only search them optimally
+      indexFields.forEach((field) => {
+        const result = this.index[field].search(search.toString(), { returnMatchData: true });
+
+        result.forEach((item) => {
+          item.item.score += 100 * (flags.exclude ? -item.score : item.score);
+          return item.item;
+        });
+      });
+    } else {
+      // If no indexed fields, proceed to search normally
+      data.forEach((item) => {
+        const score = this.getScore(item.record, search, flags);
+        item.score += flags.exclude ? -score : score;
+      });
+    }
 
     return data;
   }
