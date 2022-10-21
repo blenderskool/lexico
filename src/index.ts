@@ -123,7 +123,7 @@ export default class Seekr {
   private createScoredDataAndIndex(data: Data[]): DataWithScore[] {
     const scoredData = data.map((record) => ({ record, score: 0 }));
 
-    if (this.indexes) {
+    if (this.indexes.size) {
       scoredData.forEach((item) => this.addItemToIndex(item));
     }
 
