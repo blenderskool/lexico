@@ -11,6 +11,7 @@ import {
   TokenType,
 } from './types';
 import { clone, getIndexesToSearch, getPath } from './utils';
+import { Trie } from './trie';
 
 const CmpOperations: Record<CmpOp, (lhs: number | string, rhs: number | string) => boolean> = {
   [TokenType.GT]: (lhs, rhs) => lhs > rhs,
@@ -196,5 +197,79 @@ export class FuzzyCmp implements ComparatorWithIndexing {
     }
 
     return data;
+  }
+}
+
+export class PrefixCmp implements ComparatorWithIndexing {
+  index: Record<string, Trie<DataWithScore>> = {};
+
+  addToIndex(path: string, key: string, value: DataWithScore) {
+    this.index[path] ??= new Trie();
+
+    key.split(' ').forEach((word) => {
+      this.index[path].add(word, value);
+    });
+  }
+
+  isAtomSimilar(data: Data, search: string | number) {
+    return data
+      .toString()
+      .toLowerCase()
+      .split(' ')
+      .some((word) => word.startsWith(search.toString().toLowerCase()));
+  }
+
+  isMatching(record: Data, search: string | number, { path }: Pick<SearchFlags, 'path'>): boolean {
+    if (typeof record === 'object') {
+      if (path !== undefined) {
+        const selectedField = getPath<Data, Data>(record, path);
+
+        /**
+         * Currently it is assumed that the selected result here is atomic
+         * value and not another object.
+         *
+         * Deep search is not supported and the user has to type targeted field selectors for deep objects
+         */
+
+        // if value for the selected field is undefined, don't include in search result
+        return selectedField !== undefined ? this.isAtomSimilar(selectedField, search) : false;
+      }
+
+      // Todo: Deep search? Support Arrays?
+      return Object.values(record).some((value) => this.isAtomSimilar(value, search));
+    } else {
+      return this.isAtomSimilar(record, search);
+    }
+  }
+
+  and(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags) {
+    return new BinaryCmp().and(lhs, rhs, data, flags);
+  }
+
+  or(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags) {
+    return new BinaryCmp().or(lhs, rhs, data, flags);
+  }
+
+  search(data: DataWithScore[], search: string | number, flags: SearchFlags): DataWithScore[] {
+    // Comparison operators are not defined for fuzzy search, so fallback to BinaryComparator
+    if (flags.cmpOp) return new BinaryCmp().search(data, search, flags);
+
+    const indexFields = getIndexesToSearch(flags);
+
+    if (indexFields.length) {
+      /**
+       * Searching through each indexField might cause same record to be returned
+       * multiple times. The result is passed through a set and then converted to
+       * array to remove such duplicates.
+       */
+      return [
+        ...new Set(indexFields.flatMap((field) => this.index[field].searchAll(search as string))),
+      ];
+    } else {
+      return data.filter(({ record }) => {
+        const matched = this.isMatching(record, search, flags);
+        return flags.exclude ? !matched : matched;
+      });
+    }
   }
 }
