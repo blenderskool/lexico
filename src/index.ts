@@ -79,7 +79,7 @@ class Lexer {
         case TokenType.LT:
         case TokenType.GTE:
         case TokenType.LTE: {
-          const number = parseInt(lexicon);
+          const number = Number(lexicon);
           tokenVal = isNaN(number) ? lexicon : number;
           break;
         }
