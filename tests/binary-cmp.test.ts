@@ -71,7 +71,7 @@ describe('Binary comparator', () => {
     }).not.toThrow();
   });
 
-  it('exludes results when using exclude operator', () => {
+  it('excludes results when using exclude operator', () => {
     const allIds = pick(data, 'id');
     const includedIds = pick(ls.search('falcon heavy', data), 'record.id');
     const excludedIds = exclude(allIds, includedIds).sort();
