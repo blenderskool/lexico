@@ -1,3 +1,4 @@
+import { SeekrBuilder } from './builder';
 import { BinaryCmp } from './comparators';
 import { LRParser } from './parser';
 import searchWithFlags from './search';
@@ -190,6 +191,10 @@ export default class Seekr {
 
   search(input: string, data?: Data[]) {
     return this.compile(input)(data);
+  }
+
+  build() {
+    return new SeekrBuilder(this);
   }
 }
 
