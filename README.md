@@ -118,7 +118,7 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
 
     </details>
 
-- 👟 **Escaping and single term**:
+- 👟 **Escaping and single term**:  
   Sometimes, our search terms might include characters which are treated as operators in Seekr. To prevent them from being treated as operators and cause un-intended side-effects, consider wrapping them with double quotes `" "`.
 
   <details>
