@@ -52,6 +52,7 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
 
   - **Exclude scoped to a field**: `name:!apple`  
     Searches each object and excludes it if **the string value of `name` field** has the term `apple`.
+
   - **Comparisons**:  
     Comparisons use standard comparison operators `>`, `<`, `>=`, `<=`.
 
@@ -79,6 +80,8 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
 
   - **`OR` operator**: `apple OR orange`  
     Searches in each object which includes the term `apple` **or** `orange` in its shallow fields.
+
+  <a name="implicit-and"></a>
 
   - **Implicit `AND`**: `apple orange`  
     `AND` can be eliminated and the above query is treated the same as `apple AND orange`.
@@ -114,6 +117,20 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
     Double exclusions cancel out, exclusion of `<` yields `>=` results.
 
     </details>
+
+- 👟 **Escaping and single term**:
+  Sometimes, our search terms might include characters which are treated as operators in Seekr. To prevent them from being treated as operators and cause un-intended side-effects, consider wrapping them with double quotes `" "`.
+
+  <details>
+    <summary>Examples</summary>
+
+  - `"!"`: Searches for `!` within the object.
+  - `apples "AND" oranges`: Searches for objects with `apples` including `AND` and also including `oranges` within its fields. Note: `AND` here is not treated as AND operator discussed above because it is escaped with double quotes.
+  - `"apples AND oranges"`: Searches for `apples AND oranges` within the object.
+
+  </details>
+
+  Double quotes can also be used to opt-out of the implicit AND behavior when required. For example in `apple orange`, `apple` and `orange` is considered as two separate search terms and is hence treated as `apple AND orange` (Read [implicit AND behavior](#implicit-and) above). If `apple orange` is supposed to be treated as a single search term, then it should be written as `"apple orange"`. This will search for `apple orange` within all objects.
 
 ### 🔍 Comparators - Search algorithms
 
