@@ -9,6 +9,8 @@
     <a href="https://www.npmjs.com/package/lexico">
       <img src="https://badgen.net/npm/v/lexico" />
     </a>
+    <img src="https://badgen.net/bundlephobia/min/lexico" />
+    <img src="https://badgen.net/bundlephobia/minzip/lexico?label=gzipped%20size" />
     <img src="https://badgen.net/npm/types/lexico" />
     <img src="https://badgen.net/bundlephobia/tree-shaking/lexico" />
   </p>
@@ -27,7 +29,6 @@ Lexico is a data searching library which supports a wide variety of search algor
 - ✅ **Fuzzy searching**
 - ✅ **Prefix searching**
 - ✅ **Type-safe query builder**
-- ✅ **Less than 5KB JS** (minified + gzipped)
 - <span title="Experimental, still under development and testing">🧪</span> **Search indexes**
 
 ### Inspiration
