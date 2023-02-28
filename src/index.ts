@@ -1,12 +1,13 @@
-import { SeekrBuilder } from './builder';
+import { LexicoBuilder } from './builder';
 import { BinaryCmp } from './comparators';
 import { LRParser } from './parser';
 import searchWithFlags from './search';
 import table from './table';
-import { Comparator, Data, DataWithScore, Token, TokenType, ComparatorWithIndexing } from './types';
+import { Comparator, ComparatorWithIndexing, Data, DataWithScore, Token, TokenType } from './types';
 import { getPath } from './utils';
 
-type SeekrOptions = {
+type LexicoOptions = {
+  comparator?: Comparator | ComparatorWithIndexing;
   data?: Data[];
   indexes?: string[];
 };
@@ -96,27 +97,24 @@ class Lexer {
   }
 }
 
-export default class Seekr {
+export default class Lexico {
   private comparator: Comparator | ComparatorWithIndexing;
   static parser = new LRParser<Token>(table);
   private scoredData: DataWithScore[];
   private indexes: Set<string> = new Set();
 
-  constructor(
-    comparator: Comparator | ComparatorWithIndexing = new BinaryCmp(),
-    opts?: SeekrOptions
-  ) {
-    this.comparator = comparator;
+  constructor(opts: LexicoOptions = { comparator: new BinaryCmp() }) {
+    this.comparator = opts.comparator;
 
-    if (opts?.indexes) {
+    if ('indexes' in opts) {
       this.indexes = new Set(opts.indexes);
     }
 
     /**
-     * If data is provided during initialization, and comparator supports search index,
-     * initiate index construction for faster searches
+     * If data is provided during initialization, initiate scored data and
+     * index construction (if supported) for faster searches
      */
-    if (opts?.data) {
+    if ('data' in opts) {
       this.scoredData = this.createScoredDataAndIndex(opts.data);
     }
   }
@@ -168,7 +166,7 @@ export default class Seekr {
   }
 
   compile(input: string) {
-    const [tree, err] = Seekr.parser.parse(Lexer.lexer(input));
+    const [tree, err] = Lexico.parser.parse(Lexer.lexer(input));
     if (err) {
       throw err;
     }
@@ -194,7 +192,7 @@ export default class Seekr {
   }
 
   build() {
-    return new SeekrBuilder(this);
+    return new LexicoBuilder(this);
   }
 }
 

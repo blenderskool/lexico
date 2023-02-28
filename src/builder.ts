@@ -1,4 +1,4 @@
-import type Seekr from '.';
+import type Lexico from '.';
 
 interface SearchOpts {
   scope?: string;
@@ -6,35 +6,35 @@ interface SearchOpts {
 }
 
 interface SearchNode {
-  term: string | number | SeekrOps;
+  term: string | number | LexicoOps;
   opts: SearchOpts;
 }
 
-type Node = SeekrOps | Tree | SearchNode;
+type Node = LexicoOps | Tree | SearchNode;
 
 interface Tree {
   lhs: Node;
-  op: SeekrOps;
+  op: LexicoOps;
   rhs: Node;
 }
 
 interface AcceptsSearch {
-  search(term: string | number | SeekrOps, opts: SearchOpts);
+  search(term: string | number | LexicoOps, opts: SearchOpts);
 }
 
-export class SeekrBuilder implements AcceptsSearch {
+export class LexicoBuilder implements AcceptsSearch {
   private stack: Node[] = [];
-  private seekr: Seekr;
+  private lexico: Lexico;
 
-  constructor(seekr: Seekr) {
-    this.seekr = seekr;
+  constructor(lexico: Lexico) {
+    this.lexico = lexico;
   }
 
   private constructTree() {
     // If stack size is more than 3, then create a tree Node
     if (this.stack.length >= 3) {
       const rhs = this.stack.pop() as Tree | SearchNode;
-      const op = this.stack.pop() as SeekrOps;
+      const op = this.stack.pop() as LexicoOps;
       const lhs = this.stack.pop() as Tree | SearchNode;
 
       const tree: Tree = { lhs, op, rhs };
@@ -51,21 +51,21 @@ export class SeekrBuilder implements AcceptsSearch {
    * @param term Search term, can also be another search query.
    * @param opts Search term options
    */
-  search(term: string | number | SeekrOps, opts: SearchOpts = {}) {
+  search(term: string | number | LexicoOps, opts: SearchOpts = {}) {
     this.stack.push({ term, opts });
     this.constructTree();
 
-    const op = new SeekrOps(this);
+    const op = new LexicoOps(this);
     this.stack.push(op);
     return op;
   }
 }
 
-class SeekrOps implements AcceptsSearch {
-  private builder: SeekrBuilder;
+class LexicoOps implements AcceptsSearch {
+  private builder: LexicoBuilder;
   private type: 'AND' | 'OR';
 
-  constructor(builder: SeekrBuilder) {
+  constructor(builder: LexicoBuilder) {
     this.builder = builder;
   }
 
@@ -90,7 +90,7 @@ class SeekrOps implements AcceptsSearch {
    * @param term Search term, can also be another search query.
    * @param opts Search term options
    */
-  search(term: string | number | SeekrOps, opts: SearchOpts = {}) {
+  search(term: string | number | LexicoOps, opts: SearchOpts = {}) {
     this.type = 'AND';
     return this.builder.search(term, opts);
   }
@@ -102,13 +102,13 @@ class SeekrOps implements AcceptsSearch {
     const tree = this.builder['tree'];
     const strParts: string[] = [];
 
-    const recursive = (node: Tree | SearchNode | SeekrOps) => {
+    const recursive = (node: Tree | SearchNode | LexicoOps) => {
       if ('term' in node) {
         // Process a search term node. The node could be simple / nested search term.
         const asStr = node.term.toString();
 
         let part = '';
-        if (node.term instanceof SeekrOps) {
+        if (node.term instanceof LexicoOps) {
           // Nested group
           part = `(${asStr})`;
         } else if (part.match(/\s|<|>|!|:/g)) {
@@ -124,7 +124,7 @@ class SeekrOps implements AcceptsSearch {
         part = node.opts.scope ? `${node.opts.scope}:${part}` : part;
 
         strParts.push(part);
-      } else if (node instanceof SeekrOps) {
+      } else if (node instanceof LexicoOps) {
         // Node is of type operator, the relevant token is stored under `type` field
         strParts.push(node.type);
       } else {
@@ -148,6 +148,6 @@ class SeekrOps implements AcceptsSearch {
      * TODO: Try generating parse tree directly instead of creating a string and
      * then parsing it to generate the parse tree.
      */
-    return this.builder['seekr'].compile(this.toString());
+    return this.builder['lexico'].compile(this.toString());
   }
 }

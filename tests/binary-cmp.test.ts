@@ -1,4 +1,4 @@
-import Seekr, { BinaryCmp } from '../src';
+import Lexico, { BinaryCmp } from '../src';
 import { Data } from '../src/types';
 import { pick, exclude } from './utils';
 import launches from './data.json';
@@ -6,19 +6,21 @@ import launches from './data.json';
 const data = launches as Data[];
 
 describe('Binary comparator', () => {
-  const ls = new Seekr(new BinaryCmp());
+  const ls = new Lexico({
+    comparator: new BinaryCmp(),
+  });
 
   it('performs shallow full text search on each field in the record', () => {
     /**
      * 'falcon_heavy' term is only within the `links` object in one of the records.
-     * Since Seekr only does shallow full text search, it does not find this record and returns empty result.
+     * Since Lexico only does shallow full text search, it does not find this record and returns empty result.
      */
     let result = ls.search('falcon_heavy', data);
     expect(result).toEqual([]);
 
     /**
      * Term 'Falcon heavy' appears in multiple records, usually in `mission_name` or `details`.
-     * Seekr performs search on all fields, hence all records having 'Falcon Heavy' somewhere in the record(1 level deep) will be returned.
+     * Lexico performs search on all fields, hence all records having 'Falcon Heavy' somewhere in the record(1 level deep) will be returned.
      */
     result = ls.search('Falcon heavy', data);
     expect(pick(result, 'record.id')).toEqual([55, 40, 77]);
@@ -43,7 +45,7 @@ describe('Binary comparator', () => {
 
   it('searches for atomic values in dotted path with group selectors', () => {
     /**
-     * Seekr by default only performs full-text-search 1 level deep, but allows targeted
+     * Lexico by default only performs full-text-search 1 level deep, but allows targeted
      * search on **atomic** values by passing in dotted path strings.
      *
      * In this search, all records where `rocket.rocket_name` has 'heavy' is returned.
@@ -53,7 +55,7 @@ describe('Binary comparator', () => {
     expect(pick(result, 'record.id')).toEqual([55, 81, 77]);
 
     /**
-     * `rocket` is an object(and not atomic). Seekr does not perform full text search on all fields
+     * `rocket` is an object(and not atomic). Lexico does not perform full text search on all fields
      * within the `rocket` object. This query gives an empty result
      */
     result = ls.search('rocket:heavy', data);

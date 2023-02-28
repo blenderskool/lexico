@@ -1,12 +1,12 @@
 {
-  "name": "seekr",
+  "name": "lexico",
   "version": "0.1.0",
   "description": "🔭 Powerful data searching with a terse syntax",
   "author": "Akash Hamirwasia",
   "main": "dist/index.js",
   "scripts": {
     "test": "jest",
-    "build": "tsc",
+    "build": "tsc && npm run optimize",
     "optimize": "terser dist/table.js --config-file terser.config.json -o dist/table.js",
     "search": "node dist/index.js"
   },
