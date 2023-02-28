@@ -3,7 +3,8 @@
   "version": "0.1.1",
   "description": "🔭 Powerful data searching with a terse syntax",
   "author": "Akash Hamirwasia",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
+  "module": "esm/index.js",
   "license": "MIT",
   "keywords": [
     "data",
@@ -27,9 +28,10 @@
   "homepage": "https://github.com/blenderskool/lexico#readme",
   "scripts": {
     "test": "jest",
-    "build": "tsc && npm run optimize",
-    "optimize": "terser dist/table.js --config-file terser.config.json -o dist/table.js",
-    "search": "node dist/index.js"
+    "build:cjs": "tsc && npm run optimize",
+    "build:es": "tsc -m esNext --outDir esm && npm run optimize",
+    "build": "npm run build:cjs && npm run build:es",
+    "optimize": "terser lib/table.js --config-file terser.config.json -o lib/table.js"
   },
   "devDependencies": {
     "@types/jest": "^29.1.1",

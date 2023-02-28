@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "esModuleInterop": true,
     "target": "es6",
     "moduleResolution": "node",
-    "sourceMap": false,
-    "outDir": "dist",
     "rootDir": "src",
-    "lib": ["es2019"],
-    "resolveJsonModule": true,
     "declaration": true,
-    "noUnusedLocals": true
+    "sourceMap": false,
+    "esModuleInterop": true,
+    "noUnusedLocals": true,
+    "module": "commonjs",
+    "outDir": "lib",
+    "lib": ["es2019"],
+    "resolveJsonModule": true
   },
   "exclude": ["tests/**/*"]
 }
