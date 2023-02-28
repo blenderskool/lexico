@@ -1,6 +1,6 @@
 {
   "name": "lexico",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "🔭 Powerful data searching with a terse syntax",
   "author": "Akash Hamirwasia",
   "main": "lib/index.js",
