@@ -9,8 +9,6 @@
     <a href="https://www.npmjs.com/package/lexico">
       <img src="https://badgen.net/npm/v/lexico" />
     </a>
-    <img src="https://badgen.net/bundlephobia/min/lexico" />
-    <img src="https://badgen.net/bundlephobia/minzip/lexico?label=gzipped%20size" />
     <img src="https://badgen.net/npm/types/lexico" />
     <img src="https://badgen.net/bundlephobia/tree-shaking/lexico" />
   </p>
