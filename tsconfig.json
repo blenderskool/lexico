@@ -4,11 +4,13 @@
     "esModuleInterop": true,
     "target": "es6",
     "moduleResolution": "node",
-    "sourceMap": true,
+    "sourceMap": false,
     "outDir": "dist",
     "rootDir": "src",
     "lib": ["es2019"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "declaration": true,
+    "noUnusedLocals": true
   },
   "exclude": ["tests/**/*"]
 }
