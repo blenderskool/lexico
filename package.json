@@ -15,8 +15,8 @@
     "logic",
     "indexing"
   ],
-  "types": "dist/index.d.ts",
-  "typings": "dist/index.d.ts",
+  "types": "lib/index.d.ts",
+  "typings": "lib/index.d.ts",
   "sideEffects": false,
   "repository": {
     "type": "git",
