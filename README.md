@@ -1,7 +1,7 @@
 <div align="center">
   <br />
   <br />
-  <h1>Seekr 🔭</h1>
+  <h1>Lexico 🔭</h1>
   <p>
     Powerful data searching with a terse syntax.
   </p>
@@ -10,7 +10,7 @@
   <br />
 </div>
 
-Seekr is a data searching library which supports a wide variety of search algorithms along with support for Google-inspired search operators. It is intended to be used with _moderately_ sized datasets in environments where more sophisticated and powerful search engines / databases may not be feasible to use.
+Lexico is a data searching library which supports a wide variety of search algorithms along with support for Google-inspired search operators. It is intended to be used with _moderately_ sized datasets in environments where more sophisticated and powerful search engines / databases may not be feasible to use.
 
 ### Features
 
@@ -18,33 +18,122 @@ Seekr is a data searching library which supports a wide variety of search algori
 - ✅ **Boolean searching**
 - ✅ **Fuzzy searching**
 - ✅ **Prefix searching**
+- ✅ **Type-safe query builder**
 - ✅ **Less than 5KB JS** (minified + gzipped)
 - <span title="Experimental, still under development and testing">🧪</span> **Search indexes**
 
 ### Inspiration
 
-Inspiration to build Seekr arose from the fact that data searching libraries in JavaScript had very basic support for search operators in a search query. Google search for example has a **[lot of nifty search operators](https://support.google.com/websearch/answer/2466433)** to include / exclude terms, search specific websites and so on. While most databases that support full-text search did have these search operators, they are **hard and infeasible to use** in a **browser environment** with moderately sized dataset in-memory. This is what Seekr aims to solve - to bring support for _most_ of the search operators in a JS library so that it can be used anywhere for powerful data searching! All packaged in an easy to learn and terse syntax.
+Inspiration to build Lexico arose from the fact that data searching libraries in JavaScript had very basic support for search operators in a search query. Google search for example has a **[lot of nifty search operators](https://support.google.com/websearch/answer/2466433)** to include / exclude terms, search specific websites and so on. While most databases that support full-text search did have these search operators, they are **hard and infeasible to use** in a **browser environment** with moderately sized dataset in-memory. This is what Lexico aims to solve – to bring support for _most_ of the search operators in a JS library so that it can be used anywhere for powerful data searching! All packaged in an easy to learn and terse syntax.
 
 ### Usage
 
-_Coming Soon_
+#### Install Lexico from npm:
+
+```sh
+npm i lexico
+```
+
+#### Using Lexico in code:
+
+##### Standard usage
+
+```js
+import Lexico from 'lexico';
+
+// Assume that data is an array of objects
+const data = [];
+
+const lexico = new Lexico(); // By default, `BinaryCmp` comparator is used if not specified
+
+lexico.search('search query', data);
+lexico.search('another search query', data);
+```
+
+##### Compiled queries
+
+Alternatively, you can call `compile` to compile a search query. Single compiled query can be searched across different datasets, this will be faster than previous method if search query does not change.
+
+```js
+import Lexico from 'lexico';
+
+const data = [];
+
+const lexico = new Lexico();
+
+const search = lexico.compile('search query');
+search(data);
+```
+
+##### Different comparators
+
+Lexico supports multiple searching algorithms in the form of **[comparators](#-comparators---search-algorithms)**. They can be imported from the library and passed in the `comparator` field while creating a `Lexico` instance. The functions in the resulting `Lexico` instance remains the same.
+
+```js
+import Lexico, { BinaryCmp, FuzzyCmp, PrefixCmp } from 'lexico';
+
+const data = [];
+
+const binarySearch = new Lexico({
+  comparator: new BinaryCmp(),
+});
+
+const fuzzySearch = new Lexico({
+  comparator: new FuzzyCmp(),
+});
+
+const prefixSearch = new Lexico({
+  comparator: new PrefixCmp(),
+});
+```
+
+##### Using Lexico query builder
+
+Sometimes a query has to be built programmatically without allowing the user to use the search operators directly. Lexico exposes a programmatic, operator-safe, and type-safe query builder that can be used.
+
+```js
+import Lexico, { BinaryCmp, FuzzyCmp, PrefixCmp } from 'lexico';
+
+const data = [];
+
+const lexico = new Lexico({
+  comparator: new FuzzyCmp(),
+});
+
+// Equivalent to `"john doe" AND (team:engineering OR location:India)`
+const search = lexico
+  .build()
+  .search('john doe')
+  .AND()
+  .search(
+    lexico
+      .build()
+      .search('engineering', { scope: 'team' })
+      .OR()
+      .search('India', { scope: 'location' })
+  )
+  .compile();
+
+// Search the dataset on the compiled query.
+search(data);
+```
 
 ### Syntax
 
-This is an exhaustive list of Seekr's syntax going over each operator. It might seem complicated to understand at first, but they naturally make sense when you start using them.
+This is an exhaustive list of Lexico's syntax going over each operator. It might seem complicated to understand at first, but they naturally make sense when you start using them.
 
 - ⚛️ **Search term**:  
   Single search terms. They represent the simplest query to be searched in the dataset.
 
   - **Simple**: `apple`  
     Searches in all the shallow fields in each object for the term `apple`.  
-    They are treated as case-insensitive in currently supported search algorithms of Seekr.
+    They are treated as case-insensitive in currently supported search algorithms of Lexico.
 
   - **Scoped to a field**: `name:apple`  
     Searches **in the string value of `name` field** in each object for term `apple`.
 
     - **Deep fields**: `name.scientific:malus`  
-      Seekr by default only searches on shallow fields of object. For deeper fields, they have to be explicitly scoped using dot-path syntax.
+      Lexico by default only searches on shallow fields of object. For deeper fields, they have to be explicitly scoped using dot-path syntax.
       The above query searches in each object's `name` field's `scientific` field's string value for term `malus`.
 
   - **Exclude**: `!apple`  
@@ -98,7 +187,7 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
     </details>
 
 - 🧰 **Nesting**: `(apple OR orange)`  
-  Nesting groups multiple terms to a single search term. They are **not for representing priority order** of search expressions. The above query is same as `apple OR orange`. Nesting is useful when used with other operators in Seekr.
+  Nesting groups multiple terms to a single search term. They are **not for representing priority order** of search expressions. The above query is same as `apple OR orange`. Nesting is useful when used with other operators in Lexico.
 
   - **Compound search within a field**: `name:(apple OR orange)`  
     Same as `name:apple OR name:orange` but shorter.
@@ -119,7 +208,7 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
     </details>
 
 - 👟 **Escaping and single term**:  
-  Sometimes, our search terms might include characters which are treated as operators in Seekr. To prevent them from being treated as operators and cause un-intended side-effects, consider wrapping them with double quotes `" "`.
+  Sometimes, our search terms might include characters which are treated as operators in Lexico. To prevent them from being treated as operators and cause un-intended side-effects, consider wrapping them with double quotes `" "`.
 
   <details>
     <summary>Examples</summary>
@@ -134,9 +223,9 @@ This is an exhaustive list of Seekr's syntax going over each operator. It might 
 
 ### 🔍 Comparators - Search algorithms
 
-Seekr **separates** the search algorithm from the syntax and its associated query parsing algorithm. Each search algorithm is called a **"Comparator"**. The benefit of having this separation is that it enables various search algorithms and approaches on an already defined and understood syntax without building a completely new library.
+Lexico **separates** the search algorithm from the syntax and its associated query parsing algorithm. Each search algorithm is called a **"Comparator"**. The benefit of having this separation is that it enables various search algorithms and approaches on an already defined and understood syntax without building a completely new library.
 
-Each comparator(the search algorithm) defines its fundamental operations for the search operators supported by Seekr. Then it can be simply used with the same syntax with almost no code change for the consumer. Seekr currently supports following 3 comparators which have their own use-cases along with advantages and drawbacks:
+Each comparator(the search algorithm) defines its fundamental operations for the search operators supported by Lexico. Then it can be simply used with the same syntax with almost no code change for the consumer. Lexico currently supports following 3 comparators which have their own use-cases along with advantages and drawbacks:
 
 - **`BinaryCmp`**: Boolean search algorithm. It checks if a single search term is exactly present in the string being compared to. If it is present, the record is included for further checks, otherwise it is excluded.
 
@@ -148,4 +237,4 @@ Each comparator(the search algorithm) defines its fundamental operations for the
 
 ### 📒 Search Indexes
 
-_This section is in TODO_
+_This section is coming soon!_
