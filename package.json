@@ -4,14 +4,33 @@
   "description": "🔭 Powerful data searching with a terse syntax",
   "author": "Akash Hamirwasia",
   "main": "dist/index.js",
+  "license": "MIT",
+  "keywords": [
+    "data",
+    "search",
+    "operators",
+    "dsl",
+    "fuzzy",
+    "logic",
+    "indexing"
+  ],
+  "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blenderskool/lexico"
+  },
+  "bugs": {
+    "url": "https://github.com/blenderskool/lexico/issues"
+  },
+  "homepage": "https://github.com/blenderskool/lexico#readme",
   "scripts": {
     "test": "jest",
     "build": "tsc && npm run optimize",
     "optimize": "terser dist/table.js --config-file terser.config.json -o dist/table.js",
     "search": "node dist/index.js"
   },
-  "keywords": [],
-  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.1.1",
     "@types/node": "^18.7.5",
