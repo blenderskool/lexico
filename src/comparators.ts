@@ -243,11 +243,11 @@ export class PrefixCmp implements ComparatorWithIndexing {
   }
 
   and(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags) {
-    return new BinaryCmp().and(lhs, rhs, data, flags);
+    return new BinaryCmp().and.apply(this, [lhs, rhs, data, flags]);
   }
 
   or(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags) {
-    return new BinaryCmp().or(lhs, rhs, data, flags);
+    return new BinaryCmp().or.apply(this, [lhs, rhs, data, flags]);
   }
 
   search(data: DataWithScore[], search: string | number, flags: SearchFlags): DataWithScore[] {
