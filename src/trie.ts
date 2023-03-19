@@ -45,7 +45,7 @@ export class Trie<T> {
 
     const result: T[] = [];
     Object.values(top).forEach((node) => {
-      result.concat(this.getAllValues(node));
+      result.push(...this.getAllValues(node));
     });
 
     return result;
