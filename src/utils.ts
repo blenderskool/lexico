@@ -57,3 +57,15 @@ export const getIndexesToSearch = (flags: SearchFlags): string[] => {
 
   return [];
 };
+
+export const splitWithOffsets = (str: string, delimiter: string | RegExp) => {
+  const splits: [string, number][] = [];
+  let prevLength = 0;
+
+  for (const subStr of str.split(delimiter)) {
+    splits.push([subStr, prevLength]);
+    prevLength = prevLength + subStr.length;
+  }
+
+  return splits;
+};

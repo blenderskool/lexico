@@ -114,6 +114,9 @@ export default function searchWithFlags(
        */
     }
     default:
+      // Empty queries simply return the data passed as argument since there's nothing to search
+      if (parseTree.body.length === 0) return data;
+
       return searchWithFlags(excludeParenthesis(parseTree), data, comparator, flags);
   }
 }

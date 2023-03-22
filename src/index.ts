@@ -4,37 +4,39 @@ import { LRParser } from './parser';
 import searchWithFlags from './search';
 import table from './table';
 import { Comparator, ComparatorWithIndexing, Data, DataWithScore, Token, TokenType } from './types';
-import { getPath } from './utils';
+import { getPath, splitWithOffsets } from './utils';
 
 type LexicoOptions = {
   comparator?: Comparator | ComparatorWithIndexing;
   data?: Data[];
   indexes?: string[];
+  disableErrorRecovery?: boolean;
 };
 
 class Lexer {
-  static getNextToken(splitStr: string[]) {
-    let lexicon = splitStr.shift();
+  static getNextToken(tokens: [string, number][]): [string, number] {
+    let [lexicon, pos] = tokens.shift();
 
     // Merge quoted string to one lexicon
     if (lexicon === '"') {
       lexicon = '';
-      while (splitStr.length) {
-        const ch = splitStr.shift();
+      ++pos;
+      while (tokens.length) {
+        const [ch] = tokens.shift();
         if (ch === '"') break;
         lexicon += ch;
       }
     }
 
-    return lexicon;
+    return [lexicon, pos];
   }
 
   static *lexer(input: string) {
-    const splitStr = input.split(/(:|"|<=|>=|<|>|!|\s+|\(|\))/g);
+    const tokens = splitWithOffsets(input, /(:|"|<=|>=|<|>|!|\s+|\(|\))/g);
     let prevToken: Token = null;
 
-    while (splitStr.length) {
-      const lexicon = Lexer.getNextToken(splitStr);
+    while (tokens.length) {
+      const [lexicon, pos] = Lexer.getNextToken(tokens);
 
       if (lexicon.trim().length === 0) continue;
       let tokenVal: string | number;
@@ -90,7 +92,7 @@ class Lexer {
           break;
       }
 
-      const token = { token: tokenVal, type: tokenType };
+      const token: Token = { token: tokenVal, type: tokenType, pos };
       yield token;
       prevToken = token;
     }
@@ -102,9 +104,11 @@ export default class Lexico {
   static parser = new LRParser<Token>(table);
   private scoredData: DataWithScore[];
   private indexes: Set<string> = new Set();
+  private disableErrorRecovery: boolean;
 
   constructor(opts: LexicoOptions = { comparator: new BinaryCmp() }) {
     this.comparator = opts.comparator;
+    this.disableErrorRecovery = opts.disableErrorRecovery ?? false;
 
     if ('indexes' in opts) {
       this.indexes = new Set(opts.indexes);
@@ -167,9 +171,8 @@ export default class Lexico {
 
   compile(input: string) {
     const [tree, err] = Lexico.parser.parse(Lexer.lexer(input));
-    if (err) {
-      throw err;
-    }
+
+    if (err) throw err;
 
     return (data?: Data[]) => {
       /**

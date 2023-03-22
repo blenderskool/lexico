@@ -21,6 +21,7 @@ export type CmpOp = TokenType.GT | TokenType.GTE | TokenType.LT | TokenType.LTE;
 export interface Token extends BaseToken {
   type: TokenType;
   token: string | number;
+  pos: number;
 }
 
 export type Data = { [key: string]: Data } | string | number | boolean;
