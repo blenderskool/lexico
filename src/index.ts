@@ -1,5 +1,6 @@
 import { LexicoBuilder } from './builder';
 import { BinaryCmp } from './comparators';
+import { errorRecoveryForInput } from './error-recovery';
 import { LRParser } from './parser';
 import searchWithFlags from './search';
 import table from './table';
@@ -170,7 +171,10 @@ export default class Lexico {
   }
 
   compile(input: string) {
-    const [tree, err] = Lexico.parser.parse(Lexer.lexer(input));
+    const [tree, err] = Lexico.parser.parse(
+      Lexer.lexer(input),
+      this.disableErrorRecovery ? undefined : errorRecoveryForInput(input)
+    );
 
     if (err) throw err;
 

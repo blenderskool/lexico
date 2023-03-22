@@ -20,6 +20,12 @@ export type Actions =
       reduce: [string, string];
     };
 
+export type ErrorRecoveryFn<T extends Token> = (ctx: {
+  stack: (ParseTree<T> | number)[];
+  token: IteratorResult<T>;
+  possibleTokens: string[];
+}) => void;
+
 export class LRParser<U extends Token> {
   private parseTable: Record<string, Actions | number>[];
 
@@ -28,17 +34,18 @@ export class LRParser<U extends Token> {
   }
 
   // Most of the implementation here is referred from algorithm in the Wikipedia article of LR parser
-  parse<T extends Generator<U>>(lexer: T): [ParseTree<U>, CompileError] {
+  parse<T extends Generator<U>>(
+    lexer: T,
+    errorRecovery?: ErrorRecoveryFn<U>
+  ): [ParseTree<U>, CompileError] {
     const parseTable = this.parseTable;
     const stack: (ParseTree<U> | number)[] = [0];
     let token = lexer.next();
 
-    // TODO: handle EPSILON and nullable rules parsing.
     while (true) {
       const s = stack[stack.length - 1];
       const expectedActions = parseTable[typeof s === 'number' ? s : s.type];
-      const action = (expectedActions[token.done ? '$' : token.value.type] ??
-        {}) as Actions;
+      const action = (expectedActions[token.done ? '$' : token.value.type] ?? {}) as Actions;
 
       if ('shift' in action) {
         stack.push(token.value);
@@ -46,7 +53,10 @@ export class LRParser<U extends Token> {
         token = lexer.next();
       } else if ('reduce' in action) {
         const [lhs, rhs] = action.reduce;
-        let L = rhs.split(' ').length;
+        /**
+         * For null rules, don't pop anything from the stack, simply insert a new node in the stack
+         */
+        let L = rhs === 'EPSILON' ? 0 : rhs.split(' ').length;
 
         const root: ParseTree<U> = { type: lhs, body: [] };
 
@@ -68,20 +78,24 @@ export class LRParser<U extends Token> {
         return [stack[1] as ParseTree<U>, null];
       } else {
         // error case
-        // Construct error message by returing tokens that were expected from parse table
         const possibleTokens = Object.keys(expectedActions).filter(
           (key) => typeof expectedActions[key] !== 'number'
         );
 
-        return [
-          null,
-          {
-            message: `Expected ${
-              possibleTokens.length > 1 ? 'one of ' : ''
-            }${possibleTokens.join(', ')}`,
-            type: 'Error',
-          },
-        ];
+        if (errorRecovery) {
+          errorRecovery({ stack, token, possibleTokens });
+        } else {
+          // Construct error message by returing tokens that were expected from parse table
+          return [
+            null,
+            {
+              message: `Expected ${possibleTokens.length > 1 ? 'one of ' : ''}${possibleTokens.join(
+                ', '
+              )}`,
+              type: 'Error',
+            },
+          ];
+        }
       }
     }
   }
