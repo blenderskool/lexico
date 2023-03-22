@@ -9,12 +9,11 @@ export default expandEach<Actions | number>([
     [TokenType.SearchTerm]: { shift: 8 },
     [TokenType.Exclude]: { shift: 9 },
     [TokenType.LParen]: { shift: 12 },
-    [TokenType.RParen]: { reduce: ['S', 'EPSILON'] },
     [TokenType.GT]: { shift: 13 },
     [TokenType.LT]: { shift: 14 },
     [TokenType.GTE]: { shift: 15 },
     [TokenType.LTE]: { shift: 16 },
-    $: {
+    [`${TokenType.RParen}, $`]: {
       reduce: ['S', 'EPSILON'],
     },
     S: 1,
@@ -36,12 +35,11 @@ export default expandEach<Actions | number>([
     [TokenType.SearchTerm]: { shift: 8 },
     [TokenType.Exclude]: { shift: 9 },
     [TokenType.LParen]: { shift: 12 },
-    [TokenType.RParen]: { reduce: ['S', 'EPSILON'] },
     [TokenType.GT]: { shift: 13 },
     [TokenType.LT]: { shift: 14 },
     [TokenType.GTE]: { shift: 15 },
     [TokenType.LTE]: { shift: 16 },
-    $: {
+    [`${TokenType.RParen}, $`]: {
       reduce: ['S', 'EPSILON'],
     },
     S: 17,
@@ -111,12 +109,11 @@ export default expandEach<Actions | number>([
     [TokenType.SearchTerm]: { shift: 8 },
     [TokenType.Exclude]: { shift: 9 },
     [TokenType.LParen]: { shift: 12 },
-    [TokenType.RParen]: { reduce: ['S', 'EPSILON'] },
     [TokenType.GT]: { shift: 13 },
     [TokenType.LT]: { shift: 14 },
     [TokenType.GTE]: { shift: 15 },
     [TokenType.LTE]: { shift: 16 },
-    $: {
+    [`${TokenType.RParen}, $`]: {
       reduce: ['S', 'EPSILON'],
     },
     S: 24,
