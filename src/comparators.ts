@@ -108,15 +108,26 @@ export class FuzzyCmp implements ComparatorWithIndexing {
     this.index[path].add(data);
   }
 
-  isAtomSimilar(data: Data, search: string | number) {
-    return fuzzy(search.toString(), data.toString().toLowerCase()) * 100;
+  isAtomSimilar(data: Data, search: string | number, cmpOp?: TokenType) {
+    let score = 0;
+    if (cmpOp && (typeof data === 'string' || typeof data === 'number')) {
+      // Comparison operators in Fuzzy search add a negative score if condition is not satisified
+      score = CmpOperations[cmpOp](data, search) ? 1 : -1;
+    } else {
+      score = fuzzy(search.toString(), data.toString().toLowerCase());
+    }
+    return score * 100;
   }
 
   /**
    * This method does not support comparison operators
    * as they are not defined for fuzzy searching
    */
-  getScore(record: Data, search: string | number, { path }: Pick<SearchFlags, 'path'>) {
+  getScore(
+    record: Data,
+    search: string | number,
+    { path, cmpOp }: Pick<SearchFlags, 'path' | 'cmpOp'>
+  ) {
     if (typeof record === 'object') {
       if (path !== undefined) {
         const selectedField = getPath<Data, Data>(record, path);
@@ -130,18 +141,18 @@ export class FuzzyCmp implements ComparatorWithIndexing {
 
         // if value for the selected field is undefined, return a minimum score to not include it
         return selectedField !== undefined
-          ? this.isAtomSimilar(selectedField, search)
+          ? this.isAtomSimilar(selectedField, search, cmpOp)
           : Number.MIN_SAFE_INTEGER;
       }
 
       // Todo: Deep search? Support Arrays?
       return Object.values(record).reduce<number>(
-        (sum, value) => sum + this.isAtomSimilar(value, search),
+        (sum, value) => sum + this.isAtomSimilar(value, search, cmpOp),
         0
       );
     }
 
-    return this.isAtomSimilar(record, search);
+    return this.isAtomSimilar(record, search, cmpOp);
   }
 
   and(lhs: ParseTree, rhs: ParseTree, data: DataWithScore[], flags: SearchFlags) {
@@ -173,12 +184,9 @@ export class FuzzyCmp implements ComparatorWithIndexing {
   }
 
   search(data: DataWithScore[], search: string | number, flags: SearchFlags): DataWithScore[] {
-    // Comparison operators are not defined for fuzzy search, so fallback to BinaryComparator
-    if (flags.cmpOp) return new BinaryCmp().search(data, search, flags);
-
     const indexFields = getIndexesToSearch(flags);
 
-    if (indexFields.length) {
+    if (indexFields.size) {
       // If there are fields indexed, only search them optimally
       indexFields.forEach((field) => {
         const result = this.index[field].search(search.toString(), { returnMatchData: true });
@@ -256,15 +264,19 @@ export class PrefixCmp implements ComparatorWithIndexing {
 
     const indexFields = getIndexesToSearch(flags);
 
-    if (indexFields.length) {
+    if (indexFields.size) {
       /**
        * Searching through each indexField might cause same record to be returned
        * multiple times. The result is passed through a set and then converted to
        * array to remove such duplicates.
        */
-      return [
-        ...new Set(indexFields.flatMap((field) => this.index[field].searchAll(search as string))),
-      ];
+      const results = new Set<DataWithScore>();
+
+      indexFields.forEach((field) => {
+        this.index[field].searchAll(search as string).map(results.add);
+      });
+
+      return [...results];
     } else {
       return data.filter(({ record }) => {
         const matched = this.isMatching(record, search, flags);
