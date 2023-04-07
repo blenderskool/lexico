@@ -43,19 +43,19 @@ export const getPath = <R, T extends Object>(object: T, path: string) =>
 export const clone = <T>(data: T[]) => data.map((elm) => ({ ...elm }));
 
 /**
- * Construct a list of indexes that needs to be searched based on the search flags set.
+ * Construct a set of indexes that needs to be searched based on the search flags set.
  * @param flags Search flags
- * @returns List of indexes to be searched
+ * @returns Set of indexes to be searched
  */
-export const getIndexesToSearch = (flags: SearchFlags): string[] => {
+export const getIndexesToSearch = (flags: SearchFlags): Set<string> => {
   /**
    * If indexedFields is defined and (either path selector is empty or path selector is part of indexedFields),
    * only then get the indexes to search.
    */
   if (flags.indexFields.size && (!flags.path || flags.indexFields.has(flags.path)))
-    return flags.path ? [flags.path] : [...flags.indexFields];
+    return flags.path ? new Set<string>().add(flags.path) : flags.indexFields;
 
-  return [];
+  return new Set();
 };
 
 export const splitWithOffsets = (str: string, delimiter: string | RegExp) => {
