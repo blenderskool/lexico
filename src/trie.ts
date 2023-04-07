@@ -42,12 +42,6 @@ export class Trie<T> {
 
   private getAllValues(top: Node<T>): T[] {
     if (top.end) return top.end;
-
-    const result: T[] = [];
-    Object.values(top).forEach((node) => {
-      result.push(...this.getAllValues(node));
-    });
-
-    return result;
+    return Object.values(top).flatMap((node) => this.getAllValues(node));
   }
 }

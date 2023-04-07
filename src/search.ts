@@ -87,10 +87,7 @@ export default function searchWithFlags(
           parseTree.body.unshift(firstSymbol);
       }
 
-      return searchWithFlags(excludeParenthesis(parseTree), data, comparator, {
-        ...flags,
-        ...nextFlags,
-      });
+      return searchWithFlags(excludeParenthesis(parseTree), data, comparator, nextFlags);
     }
     case 'S': {
       /**
