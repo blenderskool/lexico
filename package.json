@@ -28,10 +28,9 @@
   "homepage": "https://github.com/blenderskool/lexico#readme",
   "scripts": {
     "test": "jest",
-    "build:cjs": "tsc && npm run optimize",
-    "build:es": "tsc -m esNext --outDir esm && npm run optimize",
-    "build": "npm run build:cjs && npm run build:es",
-    "optimize": "terser lib/table.js --config-file terser.config.json -o lib/table.js"
+    "build:cjs": "tsc && ./minify.sh lib/*.js",
+    "build:es": "tsc -m esNext --outDir esm && ./minify.sh esm/*.js",
+    "build": "npm run build:cjs && npm run build:es"
   },
   "devDependencies": {
     "@types/jest": "^29.1.1",
