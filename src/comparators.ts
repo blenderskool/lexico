@@ -273,7 +273,7 @@ export class PrefixCmp implements ComparatorWithIndexing {
       const results = new Set<DataWithScore>();
 
       indexFields.forEach((field) => {
-        this.index[field].searchAll(search as string).map(results.add);
+        this.index[field].searchAll(search as string).forEach((data) => results.add(data));
       });
 
       return [...results];
