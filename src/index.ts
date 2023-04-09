@@ -119,9 +119,7 @@ export default class Lexico {
      * If data is provided during initialization, initiate scored data and
      * index construction (if supported) for faster searches
      */
-    if ('data' in opts) {
-      this.scoredData = this.createScoredDataAndIndex(opts.data);
-    }
+    this.scoredData = 'data' in opts ? this.createScoredDataAndIndex(opts.data) : [];
   }
 
   private createScoredDataAndIndex(data: Data[]): DataWithScore[] {
