@@ -163,7 +163,7 @@ export default class Lexico {
   addRecord(record: Data) {
     const scoredItem = { record, score: 0 };
     this.scoredData.push(scoredItem);
-    if (this.indexes) {
+    if (this.indexes.size) {
       this.addItemToIndex(scoredItem);
     }
   }
